@@ -1,0 +1,75 @@
+version: "3"
+
+services:
+  reverseproxy:
+    build:
+      context: .
+      dockerfile: reverseproxy.Dockerfile
+    ports:
+      - "5011:5011"
+      - "5010:5010"
+      - "5013:5013"
+    restart: always
+
+  db:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    ports: 
+      - "1433:1433"
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=V3ryStr0ngPa55!
+      - MSSQL_PID=Express
+
+  ids-int:
+    build:
+      context: .
+      dockerfile: ids.Dockerfile
+    expose:
+      - "5003"
+    depends_on:
+      - "reverseproxy"
+    environment:
+      - DbProvider=SqlServer
+      - IdentityConnectionString=Server=db;database=IdentityExpressDb;User Id=sa;Password=V3ryStr0ngPa55!;Application Name=IdentityExpressDb;
+      - IdentityServerConnectionString=Server=db;database=IdentityExpressDb;User Id=sa;Password=V3ryStr0ngPa55!;Application Name=IdentityExpressDb;
+
+  ui-int:
+    build:
+      context: .
+      dockerfile: ui.Dockerfile
+    expose:
+      - "5000"
+    depends_on:
+      - "reverseproxy"
+    environment:
+      - UiUrl=https://localhost:5010
+      - ApiUrl=https://api:5011
+      - AuthorityUrl=https://ids:5013
+      - AddUserPassword=true
+      - AdminUIClientSecret=DockerDemo
+
+  api-int:
+    build:
+      context: .
+      dockerfile: api.Dockerfile
+    expose:
+      - "5001"
+    depends_on:
+      - "db"
+      - "reverseproxy"
+    links:
+      - "db"
+    entrypoint: /app/DbStart.sh db 1433
+    environment:
+      - DbProvider=SqlServer
+      - IdentityConnectionString=Server=db;database=IdentityExpressDb;User Id=sa;Password=V3ryStr0ngPa55!;Application Name=IdentityExpressDb;
+      - IdentityServerConnectionString=Server=db;database=IdentityExpressDb;User Id=sa;Password=V3ryStr0ngPa55!;Application Name=IdentityExpressDb;
+      - UiUrl=https://localhost:5010
+      - AuthorityUrl=https://ids:5013
+      - RequireHttpsMetadata=false
+      - TargetIdentityServer4=false
+      - LoggingProvider=Docker
+      - LoggingMinimumLevel=Info
+      - AdminUIClientSecret=DockerDemo
+      - LoggingOutputTemplate=[{Timestamp:dd-MM-yyyy HH:mm:ss} {Level}] {Message}{NewLine}{Exception}
+      - LicenseKey=

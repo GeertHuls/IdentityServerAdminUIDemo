@@ -1,0 +1,75 @@
+version: "3"
+
+services:
+  reverseproxy:
+    build:
+      context: .
+      dockerfile: reverseproxy.Dockerfile
+    ports:
+      - "5011:5011"
+      - "5010:5010"
+      - "5013:5013"
+    restart: always
+
+
+  db:
+    image: mysql:8
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=Welkom1234!
+
+
+  ids-int:
+    image: rocksolidknowledge/identityserver-demo:5.0.0
+    expose:
+      - "5003"
+    depends_on:
+      - "reverseproxy"
+    environment:
+      - DbProvider=MySql
+      - IdentityConnectionString=Server=db;Uid=root;Pwd=Welkom1234!;Database=IdentityExpressDb;
+      - IdentityServerConnectionString=Server=db;Uid=root;Pwd=Welkom1234!;Database=IdentityExpressDb;
+
+
+  ui-int:
+    build:
+      context: .
+      dockerfile: ui.Dockerfile
+    expose:
+      - "5000"
+    depends_on:
+      - "reverseproxy"
+    environment:
+      - UiUrl=https://localhost:5010
+      - ApiUrl=https://api:5011
+      - AuthorityUrl=https://ids:5013
+      - AddUserPassword=true
+      - AdminUIClientSecret=DockerDemo
+
+
+  api-int:
+    build:
+      context: .
+      dockerfile: api.Dockerfile
+    expose:
+      - "5001"
+    depends_on:
+      - "db"
+      - "reverseproxy"
+    links:
+      - "db"
+    entrypoint: /app/DbStart.sh db 3306
+    environment:
+      - DbProvider=MySql
+      - IdentityConnectionString=Server=db;Uid=root;Pwd=Welkom1234!;Database=IdentityExpressDb;
+      - IdentityServerConnectionString=Server=db;Uid=root;Pwd=Welkom1234!;Database=IdentityExpressDb;
+      - UiUrl=https://localhost:5010
+      - AuthorityUrl=https://ids:5013
+      - RequireHttpsMetadata=false
+      - TargetIdentityServer4=false
+      - LoggingProvider=Docker
+      - LoggingMinimumLevel=Info
+      - AdminUIClientSecret=DockerDemo
+      - LoggingOutputTemplate=[{Timestamp:dd-MM-yyyy HH:mm:ss} {Level}] {Message}{NewLine}{Exception}
+      - LicenseKey=eyJTb2xkRm9yIjowLjAsIktleVByZXNldCI6NSwiU2F2ZUtleSI6dHJ1ZSwiTGVnYWN5S2V5IjpmYWxzZSwiR3JlZXRpbmdOYW1lIjoiR2VlcnQiLCJFbWFpbCI6ImdlZXJ0Lmh1bHNAYW5ha3Rpc2l2encuYmUiLCJSZW5ld2FsU2VudFRpbWUiOiIwMDAxLTAxLTAxVDAwOjAwOjAwIiwiY2xpZW50cyI6NSwidXNlcnMiOjEwMCwiZXhwIjoiMjA1MC0wMi0xNFQwMDowMDowMCIsImlhdCI6IjIwMjItMDEtMTRUMDA6MDA6MDAiLCJvcmciOiJBbmFrdGlzaSB2enciLCJhdWQiOjEsInR5cGUiOjF9.bOlsvarBVih+yfzcZ8zHgFWGWn+bI+lNFpQCr8BAgFyS4xFIHPDJhhwVbl8rLoDqripgQzDAcP0H2YD9+oHO9qJgxrHFfawxZZUDPZOBO+69begkgfZT/5nfPFPyrFa271x5h/0ftRvkbWRPGvrdrxOCACW9OWZ+Z8t6mNv9WH9JP7jfpI8Zt/qJWZQqGtyLs84i/2SjTaMxk8n+ALxPkTHpdGw0bg3y4AFvXnqDzAOzwIhb9NBUHUh26WpZZVt0qxunbg9hB8UIJh2ATwPwXxXuSI23lD/8tSyw+KzGd+lmzKJb6pcQ7l2gTJrtuhamq6SSCaId3Q/vl2p6NV43iO9+EUCdOrvgRW+rNDpgcMFRWxUK8Dn3pyfMab9v5dQrJrtbEcL26j0LrP734uGPBlp5BgxDaS9AFIgNGKL7ocEv31zR2INuAxsD94oPyz1P7WkDNB7d2bjWzx4SnvvRhA5syH+ZRkWfdLac+Lsf3Bqy9NaXYMbr2GVw/75VmOS+AFWBhhydMLu8Xlgqb+lJG72QcZM37IDZJq9BnniIxL7+BIP3C94yOrACIlzmwo4MnDhe6j6fYCVko9C2J5tyu9CaQ6ijvI7dCIL/lL1rY8DUi8PIZl/CNxhFSMi62yy97vVD/ugNvbJq6FBtoiOwVFyO6TJ2bE1mMDn+bc/6Adw=
