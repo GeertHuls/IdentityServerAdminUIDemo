@@ -10,6 +10,12 @@ services:
       - "5010:5010"
       - "5013:5013"
     restart: always
+    networks:
+      adminuidemo:
+        aliases:
+          - "localhost"
+          - "ids"
+          - "api"
 
   db:
     image: mcr.microsoft.com/mssql/server:2019-latest
@@ -19,6 +25,8 @@ services:
       - ACCEPT_EULA=Y
       - SA_PASSWORD=V3ryStr0ngPa55!
       - MSSQL_PID=Express
+    networks:
+      - adminuidemo
 
   ids-int:
     build:
@@ -32,6 +40,8 @@ services:
       - DbProvider=SqlServer
       - IdentityConnectionString=Server=db;database=IdentityExpressDb;User Id=sa;Password=V3ryStr0ngPa55!;Application Name=IdentityExpressDb;
       - IdentityServerConnectionString=Server=db;database=IdentityExpressDb;User Id=sa;Password=V3ryStr0ngPa55!;Application Name=IdentityExpressDb;
+    networks:
+      - adminuidemo
 
   ui-int:
     build:
@@ -47,6 +57,8 @@ services:
       - AuthorityUrl=https://ids:5013
       - AddUserPassword=true
       - AdminUIClientSecret=DockerDemo
+    networks:
+      - adminuidemo
 
   api-int:
     build:
@@ -73,3 +85,8 @@ services:
       - AdminUIClientSecret=DockerDemo
       - LoggingOutputTemplate=[{Timestamp:dd-MM-yyyy HH:mm:ss} {Level}] {Message}{NewLine}{Exception}
       - LicenseKey=
+    networks:
+      - adminuidemo
+
+networks:
+  adminuidemo: {}      
