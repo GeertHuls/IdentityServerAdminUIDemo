@@ -1,4 +1,4 @@
-FROM rocksolidknowledge/identityserver-demo:5.0.0
+FROM rocksolidknowledge/identityserver-demo:6.0.0
 
 # https://github.com/dotnet/SqlClient/issues/220
 RUN apk add --no-cache icu-libs

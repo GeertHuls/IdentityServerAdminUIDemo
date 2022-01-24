@@ -1,4 +1,4 @@
-FROM rocksolidknowledge/adminui:5.6.2
+FROM rocksolidknowledge/adminui:6.0.0
 
 USER root
 
